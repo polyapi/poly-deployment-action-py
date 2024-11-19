@@ -50,7 +50,9 @@ runs:
       id: poly_dir
       shell: bash
       run: |
-        echo "poly_dir=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")" >> $GITHUB_ENV
+        POLY_DIR=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")
+        mkdir -p "$POLY_DIR/poly"
+        echo "poly_dir=$POLY_DIR" >> $GITHUB_ENV
 
     - name: Restore cached PolyAPI deployments
       uses: actions/cache@v4
