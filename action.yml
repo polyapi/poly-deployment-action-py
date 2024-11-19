@@ -1,4 +1,4 @@
-name: PolyAPI Deployment Action
+name: PolyAPI Deployment Action (Python)
 description: 'This GitHub Action automates the deployment process for all PolyAPI deployables in your Python application.'
 branding:
   icon: 'upload-cloud'
