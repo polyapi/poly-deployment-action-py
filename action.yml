@@ -1,0 +1,96 @@
+name: PolyAPI Deployment Action
+description: 'This GitHub Action automates the deployment process for all PolyAPI deployables in your Python application.'
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  poly_api_key:
+    description: 'The API key for Poly.'
+    required: true
+  poly_api_base_url:
+    description: 'The base URL for the deploy target Poly instance.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Poly pre-check
+      shell: bash
+      run: |
+        if ! grep -q 'polyapi' requirements.txt; then
+          echo "Please add the PolyAPI client to your requirements.txt file."
+          exit 1
+        fi
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Restore cached dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+        key: "${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}"
+        restore-keys: |
+          "${{ runner.os }}-pip-"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Locate PolyAPI installation directory
+      id: poly_dir
+      shell: bash
+      run: |
+        echo "poly_dir=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")" >> $GITHUB_ENV
+
+    - name: Restore cached PolyAPI deployments
+      uses: actions/cache@v4
+      with:
+        path: steps.poly_dir.outputs.poly_dir
+        key: "${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}"
+        restore-keys: |
+          "${{ runner.os }}-poly-"
+
+    - name: Deploy
+      id: deploy
+      shell: bash
+      env:
+        POLY_API_KEY: ${{ inputs.poly_api_key }}
+        POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
+      run: |
+        python3 -m polyapi sync
+
+    - name: Cache PolyAPI deployments
+      uses: actions/cache@v4
+      with:
+        path: steps.poly_dir.outputs.poly_dir
+        key: ${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}
+        restore-keys: |
+          ${{ runner.os }}-poly-
+
+    - name: Commit deployment receipts
+      shell: bash
+      run: |
+        git config --global user.name 'PolyAPI Deployment Bot'
+        git config --global user.email 'poly-deployments@polyapi.io'
+        git add .
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "PolyAPI Deployment" --no-verify
+        else
+          echo "No changes to commit."
+        fi
+
+    - name: Push changes
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        github_token: ${{ github.token }}
+        branch: ${{ github.ref_name }}
