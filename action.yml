@@ -44,7 +44,7 @@ runs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.12' # stay under 3.13 for now to avoid build errors with pydantic-core
 
     - name: Restore cached dependencies
       uses: actions/cache@v4
@@ -72,7 +72,7 @@ runs:
     - name: Restore cached PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: steps.poly_dir.outputs.poly_dir
+        path: ${{ env.poly_dir }}
         key: "${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}"
         restore-keys: |
           "${{ runner.os }}-poly-"
@@ -84,12 +84,12 @@ runs:
         POLY_API_KEY: ${{ inputs.poly_api_key }}
         POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
-        python3 -m polyapi sync
+        python -m polyapi sync
 
     - name: Cache PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: steps.poly_dir.outputs.poly_dir
+        path: ${{ env.poly_dir }}
         key: ${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}
         restore-keys: |
           ${{ runner.os }}-poly-
