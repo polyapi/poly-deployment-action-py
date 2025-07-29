@@ -18,6 +18,9 @@ inputs:
   working_directory:
     description: 'Path to run Poly commands in'
     default: '.'
+  commit_path:
+    description: "Path given to git add"
+    default: '.' 
 
 runs:
   using: composite
@@ -113,7 +116,7 @@ runs:
         cd "${{ inputs.working_directory }}"
         git config --global user.name 'PolyAPI Deployment Bot'
         git config --global user.email 'poly-deployments@polyapi.io'
-        git add .
+        git add "${{ inputs.commit_path }}" || true
         if ! git diff-index --quiet HEAD; then
           git commit -m "PolyAPI Deployment" --no-verify
         else
