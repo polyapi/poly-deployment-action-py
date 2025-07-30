@@ -17,9 +17,11 @@ inputs:
     default: 'true'
   working_directory:
     description: 'Path to run Poly commands in'
+    required: false
     default: '.'
   commit_path:
     description: "Path given to git add"
+    required: false
     default: '.' 
 
 runs:
