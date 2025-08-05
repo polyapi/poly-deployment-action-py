@@ -11,16 +11,33 @@ inputs:
   poly_api_base_url:
     description: 'The base URL for the deploy target Poly instance.'
     required: true
+  do_checkout:
+    description: 'Whether the action should run its own actions/checkout step.'
+    required: false
+    default: 'true'
+  working_directory:
+    description: 'Path to run Poly commands in'
+    required: false
+    default: '.'
 
 runs:
   using: composite
   steps:
+    - name: Validate working_directory
+      shell: bash
+      run: |
+        if [ ! -d "${{ inputs.working_directory }}" ]; then
+          echo "working_directory '${{ inputs.working_directory }}' does not exist or is not a directory."
+          exit 1
+        fi
+
     - name: Check inputs
       shell: bash
       env:
         POLY_API_KEY: ${{ inputs.poly_api_key }}
         POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
+        cd "${{ inputs.working_directory }}"
         if [ -z "${POLY_API_KEY:-}" ]; then
           echo "poly_api_key is not defined. Did you forget to set it up as a secret or forget to pass it in?"
           exit 1
@@ -29,13 +46,15 @@ runs:
           echo "poly_api_base_url is not defined. Did you forget to set it up as a secret or forget to pass it in?"
           exit 1
         fi
-  
+
     - name: Checkout code
+      if: ${{ inputs.do_checkout == 'true' }}
       uses: actions/checkout@v4
 
     - name: Poly pre-check
       shell: bash
       run: |
+        cd "${{ inputs.working_directory }}"
         if ! grep -q 'polyapi' requirements.txt; then
           echo "Please add the PolyAPI client to your requirements.txt file."
           exit 1
@@ -58,6 +77,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
+        cd "${{ inputs.working_directory }}"
         pip install --upgrade pip
         pip install -r requirements.txt
 
@@ -65,6 +85,7 @@ runs:
       id: poly_dir
       shell: bash
       run: |
+        cd "${{ inputs.working_directory }}"
         POLY_DIR=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")
         mkdir -p "$POLY_DIR/poly"
         echo "poly_dir=$POLY_DIR" >> $GITHUB_ENV
@@ -84,6 +105,7 @@ runs:
         POLY_API_KEY: ${{ inputs.poly_api_key }}
         POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
+        cd "${{ inputs.working_directory }}"
         python -m polyapi sync
 
     - name: Cache PolyAPI deployments
@@ -97,6 +119,7 @@ runs:
     - name: Commit deployment receipts
       shell: bash
       run: |
+        cd "${{ inputs.working_directory }}"
         git config --global user.name 'PolyAPI Deployment Bot'
         git config --global user.email 'poly-deployments@polyapi.io'
         git add .
