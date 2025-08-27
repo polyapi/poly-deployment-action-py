@@ -61,9 +61,10 @@ runs:
         fi
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12' # stay under 3.13 for now to avoid build errors with pydantic-core
+        python-version: '3.13'
+        check-latest: true
 
     - name: Restore cached dependencies
       uses: actions/cache@v4
