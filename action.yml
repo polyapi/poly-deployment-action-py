@@ -61,9 +61,10 @@ runs:
         fi
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12' # stay under 3.13 for now to avoid build errors with pydantic-core
+        python-version: '3.13'
+        check-latest: true
 
     - name: Restore cached dependencies
       uses: actions/cache@v4
@@ -88,6 +89,13 @@ runs:
         cd "${{ inputs.working_directory }}"
         POLY_DIR=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")
         mkdir -p "$POLY_DIR/poly"
+        mkdir -p "$POLY_DIR/schemas"
+        mkdir -p "$POLY_DIR/vari"
+        mkdir -p "$POLY_DIR/tabi"
+        touch "$POLY_DIR/poly"/__init__.py
+        touch "$POLY_DIR/schemas"/__init__.py
+        touch "$POLY_DIR/vari"/__init__.py
+        touch "$POLY_DIR/tabi"/__init__.py
         echo "poly_dir=$POLY_DIR" >> $GITHUB_ENV
 
     - name: Restore cached PolyAPI deployments
