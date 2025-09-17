@@ -82,20 +82,27 @@ runs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Setup and generate PolyAPI
+      id: poly_setup
+      shell: bash
+      env:
+        DEPLOY_POLY_API_KEY: ${{ inputs.poly_api_key }}
+        DEPLOY_POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
+      run: |
+        set -euo pipefail
+        echo "::add-mask::${DEPLOY_POLY_API_KEY}"
+
+        cd "${{ inputs.working_directory }}"
+        python -m polyapi setup
+        python -m polyapi generate --no-types
+        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
+
     - name: Locate PolyAPI installation directory
       id: poly_dir
       shell: bash
       run: |
         cd "${{ inputs.working_directory }}"
         POLY_DIR=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")
-        mkdir -p "$POLY_DIR/poly"
-        mkdir -p "$POLY_DIR/schemas"
-        mkdir -p "$POLY_DIR/vari"
-        mkdir -p "$POLY_DIR/tabi"
-        touch "$POLY_DIR/poly"/__init__.py
-        touch "$POLY_DIR/schemas"/__init__.py
-        touch "$POLY_DIR/vari"/__init__.py
-        touch "$POLY_DIR/tabi"/__init__.py
         echo "poly_dir=$POLY_DIR" >> $GITHUB_ENV
 
     - name: Restore cached PolyAPI deployments
@@ -113,8 +120,12 @@ runs:
         POLY_API_KEY: ${{ inputs.poly_api_key }}
         POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
+        set -euo pipefail
+        echo "::add-mask::${POLY_API_KEY}"
+
         cd "${{ inputs.working_directory }}"
         python -m polyapi sync
+        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
 
     - name: Cache PolyAPI deployments
       uses: actions/cache@v4
