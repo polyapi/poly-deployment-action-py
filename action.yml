@@ -86,11 +86,11 @@ runs:
       id: poly_setup
       shell: bash
       env:
-        DEPLOY_POLY_API_KEY: ${{ inputs.poly_api_key }}
-        DEPLOY_POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
+        POLY_API_KEY: ${{ inputs.poly_api_key }}
+        POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
         set -euo pipefail
-        echo "::add-mask::${DEPLOY_POLY_API_KEY}"
+        echo "::add-mask::${POLY_API_KEY}"
 
         cd "${{ inputs.working_directory }}"
         python -m polyapi setup
