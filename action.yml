@@ -88,23 +88,31 @@ runs:
       run: |
         cd "${{ inputs.working_directory }}"
         POLY_DIR=$(python -c "import polyapi; import os; print(os.path.dirname(polyapi.__file__))")
-        mkdir -p "$POLY_DIR/poly"
-        mkdir -p "$POLY_DIR/schemas"
-        mkdir -p "$POLY_DIR/vari"
-        mkdir -p "$POLY_DIR/tabi"
-        touch "$POLY_DIR/poly"/__init__.py
-        touch "$POLY_DIR/schemas"/__init__.py
-        touch "$POLY_DIR/vari"/__init__.py
-        touch "$POLY_DIR/tabi"/__init__.py
         echo "poly_dir=$POLY_DIR" >> $GITHUB_ENV
+
+    - name: Setup and generate PolyAPI
+      id: poly_setup
+      shell: bash
+      env:
+        POLY_API_KEY: ${{ inputs.poly_api_key }}
+        POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
+      run: |
+        set -euo pipefail
+        echo "::add-mask::${POLY_API_KEY}"
+        cd "${{ inputs.working_directory }}"
+        python -m polyapi setup
+        python -m polyapi generate --no-types
+        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
 
     - name: Restore cached PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: ${{ env.poly_dir }}
-        key: "${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}"
+        path: | 
+          ${{ env.poly_dir }}/cached_deployables
+          ${{ env.poly_dir }}/deployments_revision
+        key: "${{ runner.os }}-poly-deployables-${{ inputs.poly_api_base_url }}-${{inputs.working_directory}}"
         restore-keys: |
-          "${{ runner.os }}-poly-"
+          "${{ runner.os }}-poly-deployables-"
 
     - name: Deploy
       id: deploy
@@ -113,16 +121,21 @@ runs:
         POLY_API_KEY: ${{ inputs.poly_api_key }}
         POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
       run: |
+        set -euo pipefail
+        echo "::add-mask::${POLY_API_KEY}"
         cd "${{ inputs.working_directory }}"
         python -m polyapi sync
+        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
 
     - name: Cache PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: ${{ env.poly_dir }}
-        key: ${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}
+        path: | 
+          ${{ env.poly_dir }}/cached_deployables
+          ${{ env.poly_dir }}/deployments_revision
+        key: "${{ runner.os }}-poly-deployables-${{ inputs.poly_api_base_url }}-${{inputs.working_directory}}"
         restore-keys: |
-          ${{ runner.os }}-poly-
+          "${{ runner.os }}-poly-deployables-"
 
     - name: Commit deployment receipts
       shell: bash
