@@ -107,7 +107,9 @@ runs:
     - name: Restore cached PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: ${{ env.poly_dir }}/cached_deployables
+        path: | 
+          ${{ env.poly_dir }}/cached_deployables
+          ${{ env.poly_dir }}/deployments_revision
         key: "${{ runner.os }}-poly-deployables-${{ inputs.poly_api_base_url }}-${{inputs.working_directory}}"
         restore-keys: |
           "${{ runner.os }}-poly-deployables-"
@@ -128,7 +130,9 @@ runs:
     - name: Cache PolyAPI deployments
       uses: actions/cache@v4
       with:
-        path: ${{ env.poly_dir }}/cached_deployables
+        path: | 
+          ${{ env.poly_dir }}/cached_deployables
+          ${{ env.poly_dir }}/deployments_revision
         key: "${{ runner.os }}-poly-deployables-${{ inputs.poly_api_base_url }}-${{inputs.working_directory}}"
         restore-keys: |
           "${{ runner.os }}-poly-deployables-"
