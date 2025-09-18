@@ -82,6 +82,21 @@ runs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Setup and generate PolyAPI
+      id: poly_setup
+      shell: bash
+      env:
+        POLY_API_KEY: ${{ inputs.poly_api_key }}
+        POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
+      run: |
+        set -euo pipefail
+        echo "::add-mask::${POLY_API_KEY}"
+
+        cd "${{ inputs.working_directory }}"
+        python -m polyapi setup
+        python -m polyapi generate --no-types
+        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
+
     - name: Locate PolyAPI installation directory
       id: poly_dir
       shell: bash
@@ -97,20 +112,6 @@ runs:
         key: "${{ runner.os }}-poly-${{ inputs.poly_api_base_url }}"
         restore-keys: |
           "${{ runner.os }}-poly-"
-
-    - name: Setup and generate PolyAPI
-      id: poly_setup
-      shell: bash
-      env:
-        POLY_API_KEY: ${{ inputs.poly_api_key }}
-        POLY_API_BASE_URL: ${{ inputs.poly_api_base_url }}
-      run: |
-        set -euo pipefail
-        echo "::add-mask::${POLY_API_KEY}"
-        cd "${{ inputs.working_directory }}"
-        python -m polyapi setup
-        python -m polyapi generate --no-types
-        rm -f .polyapi/config.json ~/.polyapi/config.json 2>/dev/null || true
 
     - name: Deploy
       id: deploy
